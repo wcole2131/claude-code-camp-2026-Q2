@@ -9,3 +9,5 @@
 week0_explore/preview/data/
 uv.lock
 pyproject.toml
+/vendor/bundle/
+/.bundle/
