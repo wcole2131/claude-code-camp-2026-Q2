@@ -7,3 +7,5 @@
 .gitattributes
 ~/node_modules
 week0_explore/preview/data/
+uv.lock
+pyproject.toml
