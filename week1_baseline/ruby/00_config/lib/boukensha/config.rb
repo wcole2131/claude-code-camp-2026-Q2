@@ -1,4 +1,5 @@
 require "yaml"
+require "bundler/setup"
 require "dotenv"
 require "pathname"
 
