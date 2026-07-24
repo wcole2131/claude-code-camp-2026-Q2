@@ -1,0 +1,205 @@
+# Python Port Plan · 01 · Struct Skeleton
+
+Status: DRAFT (revised) — open questions below must be answered before
+implementation starts.
+
+## Correction from the first draft
+
+The first draft of this plan treated `01_struct_skeleton` as a from-scratch
+port, the same way `00_config` was. That was wrong: the user has already
+copied the completed `week1_baseline/python/00_config` port verbatim into
+`week1_baseline/python/01_struct_skeleton` as a starting scaffold (confirmed
+below — every file is byte-identical to its `00_config` counterpart). The
+actual porting work is only the **delta** between the two Ruby steps, applied
+on top of that copy — not a full re-port. This revision restructures the plan
+around that delta.
+
+## Goal
+
+Turn the copied `week1_baseline/python/01_struct_skeleton/` (currently an
+exact clone of `python/00_config`, still describing "Step 0: Configuration"
+throughout) into a correct port of
+`@week1_baseline/ruby/01_struct_skeleton/`, by applying only the changes Ruby
+itself made going from `00_config` to `01_struct_skeleton`.
+
+## How this plan was created
+
+1. (From the first draft, still valid) Located the Ruby source at
+   `week1_baseline/ruby/01_struct_skeleton/` and read every non-vendored file:
+   `@week1_baseline/ruby/01_struct_skeleton/README.md`,
+   `@week1_baseline/ruby/01_struct_skeleton/Gemfile`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/config.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/context.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/message.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/tool.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/tasks/base.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/tasks/player.rb`,
+   `@week1_baseline/ruby/01_struct_skeleton/examples/example.rb`.
+2. Confirmed the launcher convention settled after `00_config`
+   (`week1_baseline/bin/<language>/<step>`, no top-level dispatcher) and that
+   `week1_baseline/bin/ruby/01_struct_skeleton` already exists on that
+   pattern.
+3. **User correction**: the user pointed out this plan didn't account for
+   having already copied `python/00_config` into `python/01_struct_skeleton`
+   as a starting point, so only the *new* changes from the Ruby step need
+   porting. Re-read the directory: `ls week1_baseline/python/01_struct_skeleton`
+   shows a full project scaffold already present (`boukensha/`, `tests/`,
+   `examples/`, `prompts/`, `pyproject.toml`, `uv.lock`, `.venv`, etc.) — not
+   an empty directory.
+4. Diffed every non-cache file in `python/01_struct_skeleton` against its
+   `python/00_config` counterpart (`boukensha/config.py`,
+   `boukensha/__init__.py`, `boukensha/tasks/base.py`,
+   `boukensha/tasks/player.py`, `examples/example.py`, `pyproject.toml`,
+   `README.md`, `tests/test_config.py`, `tests/test_tasks.py`, `.gitignore`,
+   `Makefile`, `.python-version`) — **zero differences on every file**,
+   confirming it is a verbatim, unadapted copy (still says "Step 0:
+   Configuration" in `README.md`/`examples/example.py`, `pyproject.toml`
+   still describes itself as "00: configuration").
+5. Ran `diff -u` between the two Ruby steps' sources directly to get the
+   exact, authoritative delta (see below) rather than inferring it from the
+   full file reads in step 1 alone.
+6. Confirmed `week1_baseline/bin/python/01_struct_skeleton` does not exist
+   yet (only `bin/python/00_config` does) — it still needs to be created,
+   unlike everything under `python/01_struct_skeleton/` which already exists
+   and mostly just needs editing in place rather than creating from scratch.
+7. Reused the mapping table and open questions 2–4 from the first draft
+   (Tool/Message/Context translation, dataclass mutability, test scope) —
+   those weren't wrong, only the "port from scratch" framing around them was.
+   Open question 1 from the first draft (duplicate vs. share
+   `Config`/`Tasks::Base`/`Tasks::Player` across steps) is now **answered by
+   the user's own action** — they duplicated, matching Ruby's
+   self-contained-bundle-per-step structure — so it's recorded as a decision
+   below instead of left open.
+
+## Starting point (what's already in place, unchanged)
+
+`week1_baseline/python/01_struct_skeleton/` is currently byte-identical to
+`week1_baseline/python/00_config/`. Concretely, these files need **no
+changes** because their Ruby originals are identical between the two steps
+(confirmed by `diff -u` on the Ruby sources, see below):
+
+- `boukensha/tasks/base.py`
+- `boukensha/tasks/player.py`
+- `tests/test_config.py`, `tests/test_tasks.py` (already-correct coverage for
+  `Config`/`Tasks::Base`/`Tasks::Player`, none of which changed)
+- `.gitignore`, `Makefile`, `.python-version`
+
+## The exact delta (from `diff -u` between the two Ruby steps)
+
+`@week1_baseline/ruby/00_config/lib/boukensha/config.rb` →
+`@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/config.rb`:
+- drops `require "bundler/setup"` (no Python equivalent needed — nothing to
+  port, Python has no Bundler concept)
+- drops the `PROMPTS_DIR` constant entirely
+
+`@week1_baseline/ruby/00_config/lib/boukensha/tasks/base.rb` and
+`.../tasks/player.rb` → unchanged, byte-identical.
+
+`@week1_baseline/ruby/00_config/lib/boukensha.rb` →
+`@week1_baseline/ruby/01_struct_skeleton/lib/boukensha.rb`: adds three new
+`require_relative`s — `boukensha/tool`, `boukensha/message`,
+`boukensha/context`.
+
+`@week1_baseline/ruby/00_config/examples/example.rb` →
+`@week1_baseline/ruby/01_struct_skeleton/examples/example.rb`: rewritten.
+Still builds a `Config` and resolves `player_settings`/`system_prompt`, but
+`system_prompt` is now called with **only** `user_prompts_dir:` (no
+`default_prompts_dir:` — consistent with `PROMPTS_DIR` being dropped). The
+rest of the script now builds a `Context`, registers one `move` `Tool`, seeds
+two `Message`s via `add_message`, and prints four sections (`Config:`,
+`Context:`, `Tool:`, `Messages:`) instead of the old six-field config dump.
+
+## Delta to apply to `python/01_struct_skeleton`
+
+| Change | File(s) | Action |
+|---|---|---|
+| Remove `PROMPTS_DIR` | `boukensha/config.py` | delete the `PROMPTS_DIR = Path(__file__)...` line and its comment; nothing else in the file changes |
+| Add struct modules | `boukensha/tool.py` (new), `boukensha/message.py` (new), `boukensha/context.py` (new) | port from `@week1_baseline/ruby/01_struct_skeleton/lib/boukensha/{tool,message,context}.rb` — see mapping table below |
+| Export new modules | `boukensha/__init__.py` | add `Tool`, `Message`, `Context` to the imports/`__all__`, mirroring the three new `require_relative`s in `lib/boukensha.rb` |
+| Rewrite the example | `examples/example.py` | replace the `00_config`-style dump with the `Context`/`Tool`/`Message` demo per `@week1_baseline/ruby/01_struct_skeleton/examples/example.rb`; drop the `from boukensha.config import PROMPTS_DIR` import and the `default_prompts_dir=` kwarg on the `system_prompt` call, matching the Ruby delta exactly |
+| Add the launcher | `week1_baseline/bin/python/01_struct_skeleton` (new — doesn't exist yet) | mirror `@week1_baseline/bin/python/00_config`'s shape (`cd .../python/01_struct_skeleton && uv run python examples/example.py`) |
+| Rewrite docs | `README.md` | currently a verbatim copy of the `00_config` README — replace with content adapted from `@week1_baseline/ruby/01_struct_skeleton/README.md` (struct field tables, `to_s`/`__str__` example output, Python run instructions) |
+| Update package metadata | `pyproject.toml` | `description` still reads "Boukensha agent framework — 00: configuration" — update to "— 01: struct skeleton" |
+| Nothing to do | see "Starting point" above | already correct, ruby originals didn't change |
+
+## Ruby → Python behavior mapping (for the new struct/context files)
+
+| Ruby | Python equivalent | Notes |
+|---|---|---|
+| `Tool = Struct.new(:name, :description, :parameters, :block)` | `@dataclass class Tool:` with `name: str`, `description: str`, `parameters: dict`, `block: Callable[..., str]` | README explicitly justifies Ruby `Struct` as "lightweight... in practice we would probably use Classes" — `dataclass` is the direct analog |
+| `Message = Struct.new(:role, :content, :tool_use_id)` | `@dataclass class Message:` — `role: str`, `content: str`, `tool_use_id: str \| None = None` | Ruby's `:user`/`:assistant`/`:tool_result` symbols become plain `str`, consistent with the string-only simplification already made in `00_config` |
+| Struct's block-supplied `to_s` override | `__str__` defined in the `@dataclass` body | `@dataclass` still allows a custom `__str__`; don't rely on the generated `__repr__` for the truncated display format |
+| `content.to_s[0..60]` (inclusive 61-char slice) | `content[:61]` | Ruby's `0..60` is an *inclusive* range (61 chars) — off-by-one risk if translated as `content[:60]` |
+| `description.to_s[0..40]` | `description[:41]` | same inclusive-range care |
+| `Tool#parameters.keys` shown in `to_s` (`params=[:direction]`) | `list(parameters.keys())` | parameter dict keys, not values |
+| `Context#initialize(task:, system: nil)`, `@messages = []`, `@tools = {}` | `Context.__init__(self, task, system=None)` setting `self.messages: list[Message] = []`, `self.tools: dict[str, Tool] = {}` | plain class (not a dataclass) — mirrors Ruby's hand-written `initialize` plus two behavior methods |
+| `register_tool(tool)` → `@tools[tool.name] = tool` | `def register_tool(self, tool: Tool) -> None: self.tools[tool.name] = tool` | |
+| `add_message(role, content, tool_use_id: nil)` | `def add_message(self, role: str, content: str, *, tool_use_id: str \| None = None) -> None` | builds and appends a `Message` |
+| `tool_count = @tools.size` / `turn_count = @messages.size` | `@property def tool_count(self) -> int: return len(self.tools)` / `turn_count` likewise | Ruby's one-line method defs become `@property`s |
+| `to_s` → `"#<Context task=#{task&.task_name} turns=... tools=...>"` | `f"#<Context task={self.task.task_name() if self.task else None} turns={self.turn_count} tools={self.tool_count}>"` | `task` holds the **class itself** (e.g. `Tasks::Player`), not an instance — same in Python: `Context.task` is `type[Base] \| None`, `task_name()` called on the class |
+| `Tool.new(..., ->(direction) { "..." })` lambda block | a Python `lambda direction: f"..."` | keep as a plain callable |
+| `ctx.add_message(:user, "...")` | `ctx.add_message("user", "...")` | symbol → string |
+
+## Decisions carried over from the first draft (no longer open)
+
+- **Duplicate, don't share, `Config`/`Tasks::Base`/`Tasks::Player`** — settled
+  by the user copying `00_config` wholesale rather than importing it as a
+  dependency. Matches Ruby's self-contained-bundle-per-step structure. This
+  is now the standing pattern for every future `NN_*` step: copy the prior
+  Python step as a starting scaffold, then apply that step's Ruby delta —
+  same workflow as this plan.
+- `uv` + `hatchling`, flat `boukensha/` package layout, `.python-version` =
+  `3.14`, `ruff`/`isort`/`ty` via `uv run`, `pytest` in `tests/` — already in
+  place in the copied scaffold, nothing to change.
+- `dict.get(key)`-only lookups, duck-typed `NotImplementedError` abstract
+  task base, `Config.dir` as `pathlib.Path` — already in place, unchanged by
+  this step's Ruby delta.
+
+## Open questions (please answer before implementation)
+
+1. **`Tool.block` typing** — okay to type it as `Callable[..., str]` (matches
+   the one example usage, a direction → description string), or should it be
+   left as `Callable[..., Any]` since future steps may give tools richer
+   return types (structured results, not just strings)?
+2. **`Message`/`Tool` as frozen dataclasses?** — Ruby `Struct` instances are
+   mutable by default. Should the Python `@dataclass`es be plain (mutable,
+   matching Ruby) or `frozen=True` (stricter, arguably safer for value
+   objects passed around a conversation history)? *Recommendation:
+   plain/mutable, to match Ruby's actual behavior exactly — nothing in this
+   step mutates a `Message`/`Tool` after construction, but nothing in Ruby
+   prevents it either.*
+3. **Automated tests** — following the precedent set in `00_config`, should
+   this step add `pytest` coverage for `Tool`/`Message`/`Context` (truncated
+   `__str__` formatting at the exact boundary lengths,
+   `register_tool`/`add_message`, `tool_count`/`turn_count`) even though the
+   Ruby original has none beyond the manual example script?
+   *Recommendation: yes, same as `00_config`.*
+
+## Implementation steps (once questions above are answered)
+
+1. Remove the `PROMPTS_DIR` constant from `boukensha/config.py`.
+2. Port `Tool` (`boukensha/tool.py`) and `Message` (`boukensha/message.py`) as
+   `@dataclass`es with custom `__str__`, per the mapping table — get the
+   inclusive-range slicing (`[:61]`, `[:41]`) right.
+3. Port `Context` (`boukensha/context.py`): `__init__(task, system=None)`,
+   `messages`/`tools` collections, `register_tool`, `add_message`,
+   `tool_count`/`turn_count` properties, `__str__`.
+4. Update `boukensha/__init__.py` to export `Tool`, `Message`, `Context`.
+5. Rewrite `examples/example.py` per the Ruby delta above: drop the
+   `PROMPTS_DIR` import and `default_prompts_dir=` kwarg, build the
+   `Context`, register the `move` tool (lambda), seed the two messages, print
+   the four new sections.
+6. Add `week1_baseline/bin/python/01_struct_skeleton` launcher.
+7. Rewrite `week1_baseline/python/01_struct_skeleton/README.md` from the
+   `00_config`-copied placeholder to content adapted from
+   `@week1_baseline/ruby/01_struct_skeleton/README.md`.
+8. Update `pyproject.toml`'s `description` field.
+9. If automated tests are in scope (open question 3): add `tests/` covering
+   `Tool.__str__`/`Message.__str__` truncation at the exact boundary lengths,
+   `Context.register_tool`/`add_message`/`tool_count`/`turn_count`, and
+   `Context.__str__` with and without a `task`.
+10. Verify: run `week1_baseline/bin/python/01_struct_skeleton` and diff its
+    output against `bundle exec ruby examples/example.rb` run from
+    `@week1_baseline/ruby/01_struct_skeleton/` — same four sections, same
+    truncated tool/message text, same counts.

@@ -4,5 +4,6 @@
 # Environment / secrets
 .env
 .env.local
+.gitattributes
 ~/node_modules
 week0_explore/preview/data/
