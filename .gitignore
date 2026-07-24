@@ -11,3 +11,4 @@ uv.lock
 pyproject.toml
 /vendor/bundle/
 /.bundle/
+/__init__.py
