@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Prepares a week1_baseline/ruby/<step> directory to run on this machine.
+#
+# Every new ruby/<step> ships with a Gemfile.lock generated on a machine with
+# a newer Ruby/Bundler than this one, pinning a "BUNDLED WITH" version this
+# machine can't install (requires Ruby >= 3.2; this machine has 3.0.2).
+# Bundler then tries to self-upgrade to satisfy that pin and crashes instead
+# of failing cleanly. This script re-pins BUNDLED WITH to the Bundler that's
+# actually installed here, then runs `bundle install`.
+#
+# (Gems vendor into ./vendor/bundle automatically via the global
+# `bundle config set --global path vendor/bundle` set up alongside this
+# script — no per-directory .bundle/config needed.)
+#
+# Usage:
+#   week1_baseline/bin/setup_ruby_step <step-name>   # e.g. 04_api_client
+#   week1_baseline/bin/setup_ruby_step               # fixes every ruby/* step
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+ruby_dir="$script_dir/../ruby"
+installed_version="$(bundle --version | awk '{print $NF}')"
+
+fix_step() {
+  local dir="$1"
+  local lockfile="$dir/Gemfile.lock"
+  [ -f "$lockfile" ] || return 0
+
+  local current
+  current="$(grep -A1 "^BUNDLED WITH$" "$lockfile" 2>/dev/null | tail -1 | tr -d ' ')"
+  if [ -n "$current" ] && [ "$current" != "$installed_version" ]; then
+    echo "==> $(basename "$dir"): repinning BUNDLED WITH $current -> $installed_version"
+    sed -i "/^BUNDLED WITH$/{n;s/.*/   $installed_version/}" "$lockfile"
+  fi
+
+  echo "==> $(basename "$dir"): bundle install"
+  (cd "$dir" && bundle install)
+}
+
+if [ "$#" -ge 1 ]; then
+  fix_step "$ruby_dir/$1"
+else
+  for dir in "$ruby_dir"/*/; do
+    [ -f "$dir/Gemfile" ] && fix_step "${dir%/}"
+  done
+fi
