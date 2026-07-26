@@ -1,0 +1,37 @@
+# Reference only — every real step's pyproject.toml is copied forward from the previous step,
+# not generated from this template. Use this to sanity-check the copied file still matches repo
+# convention, and to see exactly which line to edit (the `description` field) when bumping steps.
+#
+# See week1_baseline/python/<latest step>/pyproject.toml for the actual current example.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "boukensha"
+version = "0.1.0"
+description = "Boukensha agent framework — <NN>: <step title>"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "pyyaml>=6.0.2",
+    # add a new entry here ONLY if this step's Ruby Gemfile added a gem with a clear
+    # Python equivalent — most steps in this project add none.
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[dependency-groups]
+dev = [
+    "isort>=7.0.0",
+    "pytest>=9.0.2",
+    "ruff>=0.14.14",
+    "ty>=0.0.13",
+]

@@ -1,0 +1,13 @@
+# Reference only — copied forward from the previous step along with everything else; this file
+# should never need to change between steps. Included here just so a broken/missing Makefile in a
+# copied scaffold is easy to spot and fix.
+
+test:
+	uv run pytest -v
+
+lint:
+	uv run isort --check-only boukensha examples tests
+	uv run ruff check boukensha examples tests
+	uv run ty check
+
+.PHONY: test lint
