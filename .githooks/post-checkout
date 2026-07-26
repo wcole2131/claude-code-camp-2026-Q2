@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Runs after `git checkout`. Git passes: $1=previous HEAD, $2=new HEAD,
+# $3=1 if this was a branch checkout, 0 if just a file-level checkout.
+# Only branch checkouts can bring in new ruby/<step> directories, so skip
+# the (slower) sync on plain file checkouts. See _sync_ruby_gems.sh.
+[ "${3:-0}" = "1" ] || exit 0
+"$(dirname "$0")/_sync_ruby_gems.sh"

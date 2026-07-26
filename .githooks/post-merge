@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Runs after `git merge` / `git pull`. See _sync_ruby_gems.sh.
+"$(dirname "$0")/_sync_ruby_gems.sh"
