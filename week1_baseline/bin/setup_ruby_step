@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Prepares a week1_baseline/ruby/<step> directory to run on this machine.
+# Prepares a week1_baseline Ruby project directory to run on this machine —
+# either a ruby/<step> (e.g. ruby/04_api_client) or a standalone top-level
+# Ruby project living directly under week1_baseline (e.g. log_viz).
 #
 # Every new ruby/<step> ships with a Gemfile.lock generated on a machine with
 # a newer Ruby/Bundler than this one, pinning a "BUNDLED WITH" version this
@@ -12,14 +14,28 @@
 # `bundle config set --global path vendor/bundle` set up alongside this
 # script — no per-directory .bundle/config needed.)
 #
+# Some gems (e.g. nio4r, pulled in by puma) have native C extensions and need
+# system packages this script can't install itself — `ruby<ver>-dev` and
+# `build-essential`/`gcc`+`make`. If `bundle install` fails with an
+# `mkmf.rb can't find header files` error, install those via apt first.
+#
 # Usage:
-#   week1_baseline/bin/setup_ruby_step <step-name>   # e.g. 04_api_client
-#   week1_baseline/bin/setup_ruby_step               # fixes every ruby/* step
+#   week1_baseline/bin/setup_ruby_step <name>   # e.g. 04_api_client or log_viz
+#   week1_baseline/bin/setup_ruby_step          # fixes every ruby/* step, plus
+#                                                # any other top-level project
+#                                                # under week1_baseline with its
+#                                                # own Gemfile (e.g. log_viz)
 
-set -euo pipefail
+set -uo pipefail
+
+if ! command -v bundle >/dev/null 2>&1; then
+  echo "error: bundle is not installed/on PATH" >&2
+  exit 1
+fi
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-ruby_dir="$script_dir/../ruby"
+week1_dir="$script_dir/.."
+ruby_dir="$week1_dir/ruby"
 installed_version="$(bundle --version | awk '{print $NF}')"
 
 fix_step() {
@@ -38,10 +54,44 @@ fix_step() {
   (cd "$dir" && bundle install)
 }
 
+# Resolves a bare name (as passed on the command line) to its directory,
+# checking ruby/<name> first (the common case) and falling back to a
+# top-level week1_baseline/<name> project.
+resolve_dir() {
+  local name="$1"
+  if [ -f "$ruby_dir/$name/Gemfile" ]; then
+    echo "$ruby_dir/$name"
+  elif [ -f "$week1_dir/$name/Gemfile" ]; then
+    echo "$week1_dir/$name"
+  fi
+}
+
 if [ "$#" -ge 1 ]; then
-  fix_step "$ruby_dir/$1"
+  target="$(resolve_dir "$1")"
+  if [ -z "$target" ]; then
+    echo "error: no Gemfile found for '$1' under ruby/ or week1_baseline/" >&2
+    exit 1
+  fi
+  fix_step "$target" || exit 1
 else
+  status=0
+
   for dir in "$ruby_dir"/*/; do
-    [ -f "$dir/Gemfile" ] && fix_step "${dir%/}"
+    [ -f "$dir/Gemfile" ] || continue
+    fix_step "${dir%/}" || { echo "warning: $(basename "${dir%/}") failed, continuing" >&2; status=1; }
   done
+
+  # Any other top-level week1_baseline/<dir> with its own Gemfile (e.g.
+  # log_viz) — deliberately generic so future standalone project dirs are
+  # picked up automatically without editing this script again.
+  for dir in "$week1_dir"/*/; do
+    base="$(basename "${dir%/}")"
+    case "$base" in
+      ruby|python|bin) continue ;;
+    esac
+    [ -f "$dir/Gemfile" ] || continue
+    fix_step "${dir%/}" || { echo "warning: $base failed, continuing" >&2; status=1; }
+  done
+
+  exit "$status"
 fi
