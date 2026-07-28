@@ -129,3 +129,10 @@ API key set?    true
 
 #<Boukensha::Config dir=/home/andrew/Sites/Claude-Code-Camp/.boukensha tasks=player>
 ```
+
+## Considerations
+These are things we observed but we do not want fixed since future steps will break
+- We have default prompt eg. prompts/system.md its supposed to be scoped based on task. eg. prompt/<task>/system.md
+- Our setting files should except .yml or .yaml, at the moment it only takes .yaml
+- We don't have a graceful way of saying we didn't find the file, it just errors out
+expecting to read a non existant file

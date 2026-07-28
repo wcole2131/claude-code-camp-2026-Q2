@@ -520,22 +520,26 @@ custom encoder to match Ruby's quirk.
    property keeps the name `model_info`; the class-level by-name lookup
    is renamed to a private `_model_info_for`. Flagging for sign-off since
    it's a rename away from a literal 1:1 method-name port.
+   - Please use best judgement for this question.
 2. **`Base.__init__`** — Ruby's `Base` class has no `initialize` of its
    own; each subclass defines its own (differing in whether it takes
    `api_key:` or `host:`) and calls the shared private `configure_model`.
    *Recommendation:* mirror this exactly — no `Base.__init__` in Python
    either, just the shared `_configure_model` helper, to avoid inventing a
    constructor shape Ruby doesn't have.
+   - Use the recommendation for this step.
 3. **`MODELS` typing** — plain `dict[str, Any]` (per "Decisions carried
    over" above) vs. introducing a `TypedDict` for model-info entries.
    *Recommendation:* plain `dict[str, Any]`, consistent with how
    `Config.settings`/`Tool.parameters` are already typed in this codebase.
+   - Use the recommendation for this step.
 4. **PromptBuilder's `headers`/`url`** — plain methods (`def headers(self)`)
    vs. `@property`. Ruby's `attr_reader`-less `def headers; @backend.headers; end`
    reads like a property (no-arg, value-returning). *Recommendation:*
    `@property` for both, matching how `Context.tool_count`/`turn_count` and
    `Config.dir`/`settings` are already exposed as properties elsewhere in
    this port.
+   - Use the recommendation for this step.
 5. **Automated tests** — following the precedent set by every prior step,
    should this add `tests/test_backends.py` (parametrized/shared coverage
    across all 5 concrete backends: model validation success/failure,
@@ -548,6 +552,7 @@ custom encoder to match Ruby's quirk.
    formats) is large enough that skipping tests would leave the riskiest
    part of the port (the `0.0`/`None` cost pitfall, the role-mapping
    differences) unverified.
+   - Use the recommendation to use both steps.
 6. **The `PromptBuilder#to_messages`/backend arity mismatch** (see "A real
    issue found in the Ruby source" above) — reproduce Ruby's latent bug
    faithfully (Anthropic/Gemini `to_messages(self, messages)`, the other
@@ -562,10 +567,12 @@ custom encoder to match Ruby's quirk.
    "fixing" an interface Ruby itself hasn't fixed yet would contradict this
    port series' established practice of carrying forward source quirks
    rather than opportunistically redesigning them.
+   - Please use the reproduce faithfully — `to_api_payload` as recommended for this step
 7. **Ruby README's broken `Run Example` path** — same typo pattern as
    `02_the_registry` (`./week1_baseline/bin/03_prompt_builder`, missing the
    `ruby/` segment). *Recommendation:* don't propagate it; use
    `./week1_baseline/bin/python/03_prompt_builder` in the Python README.
+   - Please use the recommendation for this step to use `./week1_baseline/bin/python/03_prompt_builder` in the Python README
 
 ## Implementation steps (once questions above are answered)
 

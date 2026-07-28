@@ -123,12 +123,14 @@ Reference for conventions only (not being ported, just followed):
 1. **Dependency manager** — use `uv` (matches the only existing Python project
    in this repo) or something else (plain `pip` + `requirements.txt`, `poetry`)?
    *Recommendation: `uv`, for consistency with `circlemud-world-parser`.*
+   - Use the recommendation that was provided.
 2. **`dig`/`fetch` key lookup** — Ruby tries both string and symbol keys because
    Ruby hashes can be built either way. YAML-loaded Python dicts only ever have
    `str` keys. Should the port simply drop the dual-lookup and use plain
    `dict.get(key)`, or is there a reason (future non-YAML settings source?) to
    preserve dual-key flexibility?
    *Recommendation: simplify to `str`-only lookup.*
+   - Use the recommendation for `str`-only lookup
 3. **Abstract task base** — Ruby's `Tasks::Base.task_name` raises
    `NotImplementedError` if uncalled on the base class directly (duck-typed
    abstract method). Should the Python port use the same duck-typed pattern, or
@@ -136,11 +138,13 @@ Reference for conventions only (not being ported, just followed):
    *Recommendation: duck-typed `NotImplementedError`, to mirror Ruby's shape
    exactly since these are class-level (no-instance) methods and `ABC`'s
    instance-based abstractness doesn't map cleanly.*
+   - Use the recommendation that was provided.
 4. **Ruby/Python coexistence** — is `ruby/00_config` staying in the repo
    permanently (parallel implementations, e.g. to compare or because both are
    used going forward), or is Python meant to eventually replace it? This
    affects whether the Python README should say "the canonical implementation"
    or "a port of `ruby/00_config`, kept in sync."
+   - This will be a parallel for ruby and python.
 5. **`bin/` dispatch** — `week1_baseline/bin/00_config` and the new
    `week1_baseline/bin/ruby/00_config` are currently identical
    (`bundle exec ruby examples/example.rb`). Once
@@ -148,15 +152,19 @@ Reference for conventions only (not being ported, just followed):
    `week1_baseline/bin/00_config` do — stay a Ruby-only launcher, become a
    language-selector (e.g. `BOUKENSHA_LANG=python`), or should it be removed in
    favor of always calling the language-specific script directly?
+   - I created sub-folders in bin so have bin/python and bin/ruby, please fix the pathing for
+   ruby abd create a bew bin script for running the python.
 6. **Automated tests** — the Ruby step ships no automated tests, only the
    manual `examples/example.rb` smoke test. `circlemud-world-parser` uses
    `pytest` throughout. Should this port add real `pytest` unit tests for
    `Config`/`Tasks::Base`/`Tasks::Player` (recommended, matches repo
    convention) even though there's no Ruby test to port from, or match Ruby's
    scope and ship only the example script?
+   - Use the example.rb for testing.
 7. **Config directory path type** — okay to expose `Config.dir` as a
    `pathlib.Path` (more idiomatic) rather than a `str` like Ruby's `@dir`, given
    downstream code (the example script, future task steps) will consume it?
+   - This should be fine.
 
 ## Implementation steps (once questions above are answered)
 
