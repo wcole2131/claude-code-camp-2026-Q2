@@ -104,7 +104,27 @@
       "Bash(./bin/ruby/08_the_repl_loop)",
       "Bash(echo \"no diff = identical \\(exit $?\\)\")",
       "Bash(bin/ruby/08_the_repl_loop)",
-      "Bash(bin/python/08_the_repl_loop)"
+      "Bash(bin/python/08_the_repl_loop)",
+      "Bash(gem help *)",
+      "Bash(gem env *)",
+      "Bash(boukensha --version)",
+      "Bash(boukensha --help)",
+      "Bash(gem uninstall *)",
+      "Bash(gem build *)",
+      "Bash(timeout 10 boukensha)",
+      "Bash(mkdir -p ~/.boukensha)",
+      "Read(//home/wcole2131/**)",
+      "Bash(awk -F'=' '{print $1\"=[\"length\\($2\\)\" chars]\"}' ~/.boukensha/.env)",
+      "Bash(find / -xdev -iname \".env\" -path \"*boukensha*\")",
+      "Bash(find / -xdev -iname \".env\")",
+      "Read(//mnt/c/**)",
+      "Read(//home/**)",
+      "Read(//mnt/c/Users/**)",
+      "Bash(awk -F'=' '{print $1\"=[\"length\\($2\\)\" chars]\"}' /mnt/c/Users/Owner/repos/claude-code-camp-2026-Q2/.boukensha/.env)",
+      "Bash(env)",
+      "Bash(git -C /mnt/c/Users/Owner/repos/claude-code-camp-2026-Q2 check-ignore -v .boukensha/.env)",
+      "Bash(git -C /mnt/c/Users/Owner/repos/claude-code-camp-2026-Q2 status --short .boukensha)",
+      "Bash(export BOUKENSHA_DIR=\"/mnt/c/Users/Owner/repos/claude-code-camp-2026-Q2/.boukensha\")"
     ]
   }
 }
