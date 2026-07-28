@@ -12,3 +12,4 @@ pyproject.toml
 /vendor/bundle/
 /.bundle/
 /__init__.py
+.gem
