@@ -23,10 +23,12 @@ puts "Config: #{cfg}"
 puts "API key set? #{!ENV['ANTHROPIC_API_KEY'].nil?}"
 puts
 
-Boukensha.run(
+result = Boukensha.run(
   task: "Connect to the MUD, look at your surroundings, check your score, " \
         "then look at the available exits and tell me what you see.",
   # system/model/api_key all come from config automatically
   working_dir: false   # no filesystem tools needed for MUD play
   # mud: comes from config (settings.yaml mud: block) automatically
 )
+
+puts result
