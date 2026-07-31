@@ -138,6 +138,7 @@ class Repl:
                     "╚══════════════════════════════════════╝",
                     f"  config:    {config_line}",
                     f"  provider:  {provider_line}",
+                    f"  tools:     {self._context.tool_count} registered (via MCP — see mcp_servers:)",
                     "",
                     "  /quiet or /loud   toggle logging",
                     "  /clear           reset conversation history",

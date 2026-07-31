@@ -187,7 +187,23 @@
       "Bash(timeout 60 boukensha)",
       "Bash(mud-manager --host localhost --port 4000 --timeout 3)",
       "Bash(git status *)",
-      "Bash(MUD_HOST=localhost MUD_PORT=4000 MUD_NAME=dummy MUD_PASSWORD=helloworld timeout 60 bundle exec ruby examples/demo.rb)"
+      "Bash(MUD_HOST=localhost MUD_PORT=4000 MUD_NAME=dummy MUD_PASSWORD=helloworld timeout 60 bundle exec ruby examples/demo.rb)",
+      "Bash(git stash *)",
+      "Bash(gem environment *)",
+      "Read(//var/lib/gems/3.0.0/gems/boukensha-0.10.0/**)",
+      "Read(//var/lib/gems/3.0.0/gems/boukensha-0.10.0/lib/boukensha/**)",
+      "Bash(ruby3.0 -ryaml -e ' *)",
+      "Bash(gem contents *)",
+      "Bash(git -C /mnt/c/Users/Owner/repos/claude-code-camp-2026-Q2 status --short week1_baseline/ruby/11_tui/Gemfile.lock)",
+      "Bash(gem -v)",
+      "Bash(curl -sI https://rubygems.org)",
+      "Bash(sudo curl -sI https://rubygems.org)",
+      "Bash(sudo env)",
+      "Bash(lsb_release -a)",
+      "Bash(git -C ~ clone https://github.com/rbenv/rbenv.git ~/.rbenv)",
+      "Bash(git clone *)",
+      "Bash(sudo apt-get update -qq)",
+      "Bash(sudo apt-get install -y -qq autoconf patch build-essential rustc libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libgmp-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev libdb-dev uuid-dev)"
     ]
   }
 }

@@ -117,10 +117,13 @@ def _default_mcp_servers(
             MCPClient.shell_server(working_dir=working_dir, timeout=shell_timeout, allowed_commands=allowed_commands)
         )
 
-    if cfg.mud_host and cfg.mud_username and cfg.mud_password:
+    if cfg.mud_host and cfg.mud_username:
+        # Ruby happily passes a nil password through if it's unset (it just fails downstream
+        # when the MUD server rejects the login); the cast preserves that same "let it fail
+        # downstream" behavior for Python's static typing, same rationale as api_key above.
         servers.append(
             MCPClient.mud_manager_server(
-                host=cfg.mud_host, port=cfg.mud_port, name=cfg.mud_username, password=cfg.mud_password
+                host=cfg.mud_host, port=cfg.mud_port, name=cfg.mud_username, password=cast(str, cfg.mud_password)
             )
         )
 

@@ -54,12 +54,33 @@ class MCPClient:
         cwd: str | Path | None = None,
         env: dict[str, str] | None = None,
     ) -> None:
-        # Strip any inherited Bundler env before spawning -- without this, a
+        # Strip any inherited Bundler/rbenv env before spawning -- without this, a
         # Ruby MCP server launched via `bundle exec` from inside a process
-        # that itself inherited BUNDLE_GEMFILE/RUBYOPT (e.g. a shell that
-        # ran a ruby bundle exec command earlier) would resolve against the
-        # wrong Gemfile instead of doing a fresh cwd-based lookup in `cwd`.
-        base_env = {k: v for k, v in os.environ.items() if not k.startswith("BUNDLE_") and k != "RUBYOPT"}
+        # that itself inherited BUNDLE_GEMFILE/RUBYOPT/RBENV_VERSION (e.g. a shell
+        # that ran a ruby bundle exec command earlier, or an rbenv shim that
+        # exported RBENV_VERSION into its own env) would resolve against the
+        # wrong Gemfile/Ruby instead of doing a fresh cwd-based lookup in `cwd`.
+        base_env = {
+            k: v
+            for k, v in os.environ.items()
+            if not k.startswith("BUNDLE_") and not k.startswith("RBENV_") and k != "RUBYOPT"
+        }
+
+        # Clearing RBENV_VERSION isn't enough on its own: once an rbenv shim
+        # has resolved a version for *this* process, it also prepends that
+        # version's concrete bin/ dir (e.g. ~/.rbenv/versions/3.3.12/bin) to
+        # PATH ahead of ~/.rbenv/shims, and that prefix inherits into children
+        # regardless of RBENV_VERSION -- so `bundle`/`ruby` in the child would
+        # still resolve straight to this process's Ruby instead of re-running
+        # the shim's cwd-based lookup in `cwd`. Strip it back to the shims dir
+        # so a server pinned to a different Ruby version resolves its own.
+        rbenv_root = os.environ.get("RBENV_ROOT")
+        if rbenv_root and "PATH" in base_env:
+            prefix = f"{rbenv_root}/versions/"
+            base_env["PATH"] = os.pathsep.join(
+                p for p in base_env["PATH"].split(os.pathsep) if not p.startswith(prefix)
+            )
+
         full_env = {**base_env, **(env or {})}
         self._proc = subprocess.Popen(
             command,
