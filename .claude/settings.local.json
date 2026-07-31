@@ -205,7 +205,23 @@
       "Bash(sudo apt-get update -qq)",
       "Bash(sudo apt-get install -y -qq autoconf patch build-essential rustc libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libgmp-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev libdb-dev uuid-dev)",
       "Bash(pip3 show *)",
-      "Bash(uv add *)"
+      "Bash(uv add *)",
+      "Bash(mkdir -p 12_context/lib/boukensha/mcp)",
+      "Bash(cp 11_tui/lib/boukensha/mcp.rb 12_context/lib/boukensha/mcp.rb)",
+      "Bash(cp 11_tui/lib/boukensha/mcp/server.rb 12_context/lib/boukensha/mcp/server.rb)",
+      "Read(//usr/bin/**)",
+      "Bash(find / -maxdepth 6 -iname \"ruby\" -type f)",
+      "Bash(sudo -v)",
+      "Bash(sudo cat /root/.gemrc)",
+      "Read(//etc/**)",
+      "Bash(sudo which gem ruby)",
+      "Bash(sudo gem -v)",
+      "Bash(sudo printenv PATH)",
+      "Bash(rbenv version *)",
+      "Bash(sudo -l)",
+      "Bash(/usr/bin/gem3.0 -v)",
+      "Bash(env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/tmp/fakehome ruby3.0 -e \"require 'rubygems'; require 'rubygems/remote_fetcher'; puts Gem::RemoteFetcher.fetcher.inspect\")",
+      "Bash(curl -s --max-time 5 \"https://rubygems.org/api/v1/gems/charm.json\")"
     ]
   }
 }
