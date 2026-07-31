@@ -1,0 +1,110 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from .base import Base
+
+if TYPE_CHECKING:
+    from ..context import Context
+    from ..message import Message
+    from ..tool import Tool
+
+
+class Anthropic(Base):
+    BASE_URL = "https://api.anthropic.com/v1/messages"
+    MODELS: ClassVar[dict[str, dict[str, Any]]] = {
+        "claude-haiku-4-5": {
+            "context_window": 200_000,
+            "cost_per_million": {"input": 1.0, "output": 5.0},
+            "usage_unit": "tokens",
+        },
+        "claude-haiku-4-5-20251001": {
+            "context_window": 200_000,
+            "cost_per_million": {"input": 1.0, "output": 5.0},
+            "usage_unit": "tokens",
+        },
+        "claude-sonnet-4-6": {
+            "context_window": 1_000_000,
+            "cost_per_million": {"input": 3.0, "output": 15.0},
+            "usage_unit": "tokens",
+        },
+        "claude-opus-4-8": {
+            "context_window": 1_000_000,
+            "cost_per_million": {"input": 5.0, "output": 25.0},
+            "usage_unit": "tokens",
+        },
+    }
+
+    def __init__(self, *, api_key: str, model: str) -> None:
+        self.api_key = api_key
+        self._configure_model(model)
+
+    def to_messages(self, messages: list[Message]) -> list[dict[str, Any]]:
+        result = []
+        for msg in messages:
+            if msg.role == "tool_result":
+                result.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": msg.tool_use_id,
+                                "content": msg.content,
+                            }
+                        ],
+                    }
+                )
+            else:
+                result.append({"role": msg.role, "content": msg.content})
+        return result
+
+    def to_tools(self, tools: dict[str, Tool]) -> list[dict[str, Any]]:
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": self._input_schema_for(tool.parameters),
+            }
+            for tool in tools.values()
+        ]
+
+    @staticmethod
+    def _input_schema_for(parameters: dict[str, Any]) -> dict[str, Any]:
+        properties: dict[str, Any] = {}
+        required: list[str] = []
+
+        for name, spec in parameters.items():
+            prop = {"type": spec.get("type"), "description": spec.get("description")}
+            properties[name] = {k: v for k, v in prop.items() if v is not None}
+            if spec.get("required", True):
+                required.append(name)
+
+        return {"type": "object", "properties": properties, "required": required}
+
+    def to_payload(
+        self, context: Context, *, max_output_tokens: int = 1024, tools: list[dict[str, Any]] | None = None
+    ) -> dict[str, Any]:
+        return {
+            "model": self.model,
+            "system": context.system,
+            "max_tokens": max_output_tokens,
+            "tools": self.to_tools(context.tools) if tools is None else tools,
+            "messages": self.to_messages(context.messages),
+        }
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return {
+            "Content-Type": "application/json",
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+        }
+
+    @property
+    def url(self) -> str:
+        return self.BASE_URL
+
+    def parse_response(self, response: dict[str, Any]) -> dict[str, Any]:
+        stop_reason = "tool_use" if response.get("stop_reason") == "tool_use" else "end_turn"
+        return {"stop_reason": stop_reason, "content": response.get("content") or []}

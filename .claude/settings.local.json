@@ -203,7 +203,9 @@
       "Bash(git -C ~ clone https://github.com/rbenv/rbenv.git ~/.rbenv)",
       "Bash(git clone *)",
       "Bash(sudo apt-get update -qq)",
-      "Bash(sudo apt-get install -y -qq autoconf patch build-essential rustc libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libgmp-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev libdb-dev uuid-dev)"
+      "Bash(sudo apt-get install -y -qq autoconf patch build-essential rustc libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libgmp-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev libdb-dev uuid-dev)",
+      "Bash(pip3 show *)",
+      "Bash(uv add *)"
     ]
   }
 }
