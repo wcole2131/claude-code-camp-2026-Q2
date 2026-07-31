@@ -55,13 +55,24 @@ module Boukensha
           {
             name: tool.name,
             description: tool.description,
-            input_schema: {
-              type: "object",
-              properties: tool.parameters,
-              required: tool.parameters.keys.map(&:to_s)
-            }
+            input_schema: input_schema_for(tool.parameters)
           }
         end
+      end
+
+      # Convert a Boukensha parameters hash ({ name: { type:, description:,
+      # required: } }) into a JSON Schema `input_schema` object. `required:`
+      # defaults to true. Mirrors Boukensha::MCP::Server#input_schema_for.
+      def input_schema_for(parameters)
+        properties = {}
+        required   = []
+
+        parameters.each do |name, spec|
+          properties[name.to_s] = { type: spec[:type], description: spec[:description] }.compact
+          required << name.to_s if spec.fetch(:required, true)
+        end
+
+        { type: "object", properties: properties, required: required }
       end
 
       def to_payload(context, max_output_tokens: 1024, tools: nil)

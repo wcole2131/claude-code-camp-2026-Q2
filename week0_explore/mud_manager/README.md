@@ -27,6 +27,22 @@ MudManager
 gem uninstall mud_manager
 ```
 
+## CLI
+
+Installing the gem also installs a `mud-manager` executable: an interactive
+raw-command prompt against a CircleMUD server. Whatever you type is sent to
+the MUD as-is, and the response is printed back.
+
+```sh
+mud-manager --host localhost --port 4000
+mud-manager --name YourCharacterName --password yourpassword
+```
+
+Options: `--host`, `--port`, `--timeout`, `--name` (or `$MUD_NAME`),
+`--password` (or `$MUD_PASSWORD`), `--help`. Without `--name`/`--password` you
+land at the login prompt and can type the name/password dance manually.
+Ctrl-D disconnects the client.
+
 ## Examples
 
 Test the live session:

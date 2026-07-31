@@ -9,6 +9,13 @@ module MudManager
   #
   # See FINDINGS/_synthesis/player-command-surface.md for the source of truth
   # behind every method and its parameter shape.
+  #
+  # The MCP tool catalog in week1_baseline/mud_manager_mcp/lib/mud_tools.rb is
+  # a hand-written shadow of this module's enums/method signatures (tool
+  # descriptions and parameter schemas, not generated from here). Nothing
+  # enforces that they match -- if you add, remove, or change a primitive's
+  # enum/parameters here, check whether the corresponding tool definition in
+  # mud_tools.rb needs a matching update.
   module Primitives
     Command = Struct.new(:primitive, :raw, :verb, :args, keyword_init: true) do
       def to_s = raw

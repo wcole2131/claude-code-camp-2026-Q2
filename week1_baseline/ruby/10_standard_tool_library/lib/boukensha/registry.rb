@@ -2,8 +2,17 @@ require_relative "errors"
 
 module Boukensha
   class Registry
+    attr_reader :context
+
     def initialize(context)
       @context = context
+    end
+
+    # All registered Tool structs, by name. Used by Boukensha::MCP::Server
+    # to derive tools/list generically, without needing a separate
+    # reference to the Context.
+    def tools
+      @context.tools
     end
 
     def tool(name, description:, parameters: {}, &block)

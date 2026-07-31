@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# A real MCP (Model Context Protocol) server over stdio for mud_manager.
+#
+# This process owns the one CircleMUD telnet session. Any MCP client (this
+# repo's Boukensha::MCP / MCPClient, or any other conforming client) drives
+# it by spawning this script as a subprocess and speaking JSON-RPC 2.0 over
+# its stdin/stdout. The JSON-RPC loop itself is generic — see
+# Boukensha::MCP::Server (lib/boukensha/mcp/server.rb) — this script only
+# supplies the domain-specific piece: which tools exist and what they do.
+#
+# `boukensha` is not vendored here -- it's a Bundler path dependency (see
+# ../Gemfile) on week1_baseline/ruby/10_standard_tool_library, for the
+# generic primitives only (Context, Registry, Boukensha::MCP::Server). Run
+# via `bundle exec ruby bin/mud_manager_server` from this directory so
+# Bundler resolves it.
+#
+# Connection params come from the environment, matching the MUD_* variables
+# `bin/boukensha` already understands:
+#   MUD_HOST (default "localhost"), MUD_PORT (default 4000), MUD_NAME, MUD_PASSWORD
+
+require "boukensha"
+require_relative "../lib/mud_tools"
+
+ctx      = Boukensha::Context.new(task: nil)
+registry = Boukensha::Registry.new(ctx)
+
+MudTools.register(
+  registry,
+  host:     ENV.fetch("MUD_HOST", "localhost"),
+  port:     Integer(ENV.fetch("MUD_PORT", "4000")),
+  name:     ENV.fetch("MUD_NAME") { abort "mud_manager_server: MUD_NAME is required" },
+  password: ENV.fetch("MUD_PASSWORD") { abort "mud_manager_server: MUD_PASSWORD is required" }
+)
+
+warn "[mud_manager_server] ready — #{ctx.tool_count} tools registered"
+
+Boukensha::MCP::Server.new(registry, name: "mud_manager_mcp", version: "0.1.0").serve

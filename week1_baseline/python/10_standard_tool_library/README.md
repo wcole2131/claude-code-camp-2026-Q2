@@ -1,68 +1,63 @@
 # 10 · A Standard Tool Library (Python port)
 
-Python port of `week1_baseline/ruby/10_standard_tool_library`. Boukensha now ships two built-in
-tool modules — instead of manually registering tools, a real coding harness gives the agent a
-standard library of capabilities out of the box.
+Python port of `week1_baseline/ruby/10_standard_tool_library`. **Boukensha ships no tool
+implementations of its own** — every capability (filesystem, shell, MUD) lives outside the
+framework as its own standalone MCP server (`week1_baseline/file_system_mcp`, `shell_mcp`,
+`mud_manager_mcp`), and `boukensha` only ships the generic mechanism to connect to them:
+`Registry`/`Tool`/`Context`, plus `boukensha.mcp.MCPClient` — a client that can connect to *any*
+MCP server and discover/register whatever tools it advertises. See
+`docs/plans/mud_manager/mcp_mud_plan.md` for why this is the target architecture, not a missing
+feature — `boukensha.tools.file_system`/`.shell`/`.mud` (hand-written per-language modules) no
+longer exist in this step at all.
 
-## What's new
-
-### `boukensha.tools.file_system`
-
-Registers automatically when `working_dir=` is set:
-
-| Tool | Description |
-|------|-------------|
-| `pwd` | Return the working directory |
-| `list_directory` | List files at a path (default `.`) |
-| `read_file` | Read a file's contents |
-| `write_file` | Write (or create) a file |
-| `delete_file` | Delete a file |
-| `search_files` | Grep for a regex pattern across the working tree, returns `path:line:content` matches |
-
-All paths are **relative to the working directory**. Absolute paths and `..` traversals that
-escape the root are rejected with an error string, not an exception — the agent sees the error and
-can try something sensible instead.
-
-### `boukensha.tools.shell`
-
-Registers automatically when `working_dir=` is set:
-
-| Tool | Description |
-|------|-------------|
-| `run_command` | Run a shell command inside the working directory |
-
-Commands run with a configurable timeout and an optional allow-list of permitted executables.
-
-### New `boukensha.run` / `boukensha.repl` keyword arguments
+## `boukensha.run` / `boukensha.repl`'s `mcp_servers=`
 
 ```python
 boukensha.run(
     task="...",
-    working_dir="/my/project",
-    allowed_commands=["python3", "git"],  # None = allow all (default)
-    shell_timeout=30,                     # seconds, default 30
+    mcp_servers=[
+        MCPClient.file_system_server(working_dir="/my/project"),
+        MCPClient.shell_server(working_dir="/my/project", allowed_commands=["python3", "git"]),
+        MCPClient.mud_manager_server(name="Gandalf", password="secret"),
+    ],
 )
 ```
 
-`working_dir` defaults to the current working directory; pass `working_dir=False` to skip
-registering any filesystem/shell tools entirely. `allowed_commands=None` permits any executable.
-Pass an explicit list to lock the agent down:
+`mcp_servers=` is the literal, honest shape of "tools are not part of the agent" — a list of
+`{command, cwd, env}` specs, each connected via `MCPClient.connect(**spec).register_all(registry)`.
+`MCPClient.file_system_server`/`.shell_server`/`.mud_manager_server` are convenience factories
+building the right spec for this repo's three bundled (Ruby) servers — nothing about connecting to
+them is Python-specific or otherwise special.
+
+Leave `mcp_servers=` unset (the default, `None`) and `run`/`repl` build a sensible default set
+instead: `file_system_mcp` + `shell_mcp` rooted at `working_dir=` (default: current directory; pass
+`working_dir=False` to exclude both), plus `mud_manager_mcp` if `settings.yaml`'s `mud:` block has
+`mud_username` configured.
 
 ```python
 # Only allow python3 and git — rm, curl, etc. will be rejected
-boukensha.run(task="...", allowed_commands=["python3", "git"])
+boukensha.run(task="...", working_dir="/my/project", allowed_commands=["python3", "git"])
 ```
 
-### Direct registration
+`allowed_commands=`/`shell_timeout=` only affect the default `shell_mcp` spec. Pass
+`mcp_servers=[]` to connect to nothing, or your own list to take full control.
 
-Both modules can be registered manually if you need finer control:
+## `boukensha.mcp.MCPClient` — the generic client
 
 ```python
-from boukensha.tools import file_system, shell
-
-file_system.register(registry, working_dir="/my/project")
-shell.register(registry, working_dir="/my/project", timeout=10, allowed_commands=["python3"])
+client = MCPClient.connect(command=[...], cwd="...", env={...})
+client.tools()                    # tools/list result
+client.call_tool("look")          # tools/call result, unwrapped to a string
+client.register_all(registry)     # registers every discovered tool generically
+client.close()
 ```
+
+Tests live in `tests/test_tools_mud.py` (against `tests/fake_circlemud.py`, a fake CircleMUD
+double), `tests/test_tools_file_system.py`, and `tests/test_tools_shell.py` — all spawn the real
+Ruby MCP servers, skipped automatically if `bundle`/Ruby isn't available. `tests/test_mcp_client.py`
+proves `MCPClient.register_all` isn't secretly MUD- or filesystem-shaped: it spawns
+`tests/toy_mcp_server.py`, a two-tool toy MCP server with zero relation to any of this repo's real
+servers, and drives it through the exact same generic code path.
 
 ## Run the demo
 
@@ -74,18 +69,14 @@ The demo drops you into a REPL with `working_dir` pointed at the `07_the_run_dsl
 ask the agent to list the directory, read a file, search for something, or run a shell command
 (e.g. `ls`, `wc -l boukensha/*.py`) against it.
 
-## Scope: `Tools::Mud` is not ported
+## Scope: Ruby's packaging additions are not ported
 
-Ruby's step also ships a third tool module, `Boukensha::Tools::Mud` (25 tools wrapping a separate
-`mud_manager` gem — a raw-socket CircleMUD telnet session/primitives library under
-`week0_explore/mud_manager/`). That gem has no Python equivalent anywhere in this repo, and
-building one is a materially different, larger undertaking than translating this step's Ruby
-idioms (it needs its own session/protocol layer and a live MUD server to test against). It's left
-out of this port; `boukensha.run`/`boukensha.repl` have no `mud=` keyword argument, and there is no
-`boukensha/tools/mud.py`. Ruby's own Ruby-only packaging additions for this step (`bin/boukensha`,
-`boukensha.gemspec`, `lib/boukensha_loader.rb`, turning the gem into a global executable) also have
-no Python analog — this port keeps using the `week1_baseline/bin/python/<step>` launcher
-convention established since `00_config`.
+Ruby's own Ruby-only packaging additions for this step (`bin/boukensha`, `boukensha.gemspec`,
+`lib/boukensha_loader.rb`, turning the gem into a global executable) have no Python analog — this
+port keeps using the `week1_baseline/bin/python/<step>` launcher convention established since
+`00_config`. Tool implementations aren't part of this scope question at all anymore — since none of
+`file_system`/`shell`/`mud` live inside either language's `boukensha` package, there's nothing left
+to port per language for them; every language's agent reaches the same bundled servers the same way.
 
 ## Technical Considerations
 
@@ -93,4 +84,4 @@ Observations we don't want to fix right now, just to preserve for future steps:
 
 - There's not yet enough tool coverage to accomplish every task efficiently — several agent goals
   would still map down to the same handful of primitives (`run_command` as an escape hatch for
-  anything `FileSystem` doesn't cover directly).
+  anything `file_system_mcp` doesn't cover directly).

@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from .agent import Agent
 from .backends.anthropic import Anthropic
@@ -14,6 +14,7 @@ from .config import Config
 from .context import Context
 from .errors import ApiError, LoopError, UnknownToolError, UnsupportedModelError
 from .logger import Logger
+from .mcp import MCPClient
 from .message import Message
 from .prompt_builder import PromptBuilder
 from .registry import Registry
@@ -21,7 +22,6 @@ from .repl import Repl
 from .run_dsl import RunDSL
 from .tasks.player import Player
 from .tool import Tool
-from .tools import file_system, shell
 from .version import VERSION
 
 __all__ = [
@@ -35,6 +35,7 @@ __all__ = [
     "Gemini",
     "Logger",
     "LoopError",
+    "MCPClient",
     "Message",
     "Ollama",
     "OllamaCloud",
@@ -92,6 +93,40 @@ def is_debug() -> bool:
     return _debug
 
 
+def _connect_mcp_servers(registry: Registry, specs: list[dict[str, Any]]) -> list[MCPClient]:
+    clients = []
+    for spec in specs:
+        client = MCPClient.connect(**spec)
+        client.register_all(registry)
+        clients.append(client)
+    return clients
+
+
+def _default_mcp_servers(
+    cfg: Config,
+    *,
+    working_dir: str | Path | Literal[False],
+    allowed_commands: list[str] | None,
+    shell_timeout: int,
+) -> list[dict[str, Any]]:
+    servers: list[dict[str, Any]] = []
+
+    if working_dir:
+        servers.append(MCPClient.file_system_server(working_dir=working_dir))
+        servers.append(
+            MCPClient.shell_server(working_dir=working_dir, timeout=shell_timeout, allowed_commands=allowed_commands)
+        )
+
+    if cfg.mud_host and cfg.mud_username and cfg.mud_password:
+        servers.append(
+            MCPClient.mud_manager_server(
+                host=cfg.mud_host, port=cfg.mud_port, name=cfg.mud_username, password=cfg.mud_password
+            )
+        )
+
+    return servers
+
+
 def run(
     *,
     task: str,
@@ -105,6 +140,7 @@ def run(
     working_dir: str | Path | Literal[False] | None = None,
     allowed_commands: list[str] | None = None,
     shell_timeout: int = 30,
+    mcp_servers: list[dict[str, Any]] | None = None,
     configure: Callable[[RunDSL], None] | None = None,
 ) -> str:
     cfg = get_config()
@@ -125,12 +161,15 @@ def run(
     if working_dir is None:
         working_dir = Path.cwd()
 
-    ctx = Context(task=task_class, system=system, working_dir=working_dir)
+    ctx = Context(task=task_class, system=system)
     registry = Registry(ctx)
 
-    if working_dir:
-        file_system.register(registry, working_dir=working_dir)
-        shell.register(registry, working_dir=working_dir, timeout=shell_timeout, allowed_commands=allowed_commands)
+    resolved_servers = (
+        mcp_servers
+        if mcp_servers is not None
+        else _default_mcp_servers(cfg, working_dir=working_dir, allowed_commands=allowed_commands, shell_timeout=shell_timeout)
+    )
+    mcp_clients = _connect_mcp_servers(registry, resolved_servers)
 
     if configure is not None:
         configure(RunDSL(registry))
@@ -186,6 +225,8 @@ def run(
         ctx.add_message("user", task)
         return agent.run()
     finally:
+        for mcp_client in mcp_clients:
+            mcp_client.close()
         if logger is not None:
             logger.close()
 
@@ -202,6 +243,7 @@ def repl(
     working_dir: str | Path | Literal[False] | None = None,
     allowed_commands: list[str] | None = None,
     shell_timeout: int = 30,
+    mcp_servers: list[dict[str, Any]] | None = None,
     configure: Callable[[RunDSL], None] | None = None,
 ) -> None:
     cfg = get_config()
@@ -222,12 +264,15 @@ def repl(
     if working_dir is None:
         working_dir = Path.cwd()
 
-    ctx = Context(task=task_class, system=system, working_dir=working_dir)
+    ctx = Context(task=task_class, system=system)
     registry = Registry(ctx)
 
-    if working_dir:
-        file_system.register(registry, working_dir=working_dir)
-        shell.register(registry, working_dir=working_dir, timeout=shell_timeout, allowed_commands=allowed_commands)
+    resolved_servers = (
+        mcp_servers
+        if mcp_servers is not None
+        else _default_mcp_servers(cfg, working_dir=working_dir, allowed_commands=allowed_commands, shell_timeout=shell_timeout)
+    )
+    mcp_clients = _connect_mcp_servers(registry, resolved_servers)
 
     if configure is not None:
         configure(RunDSL(registry))
@@ -285,5 +330,7 @@ def repl(
         except KeyboardInterrupt:
             print("\nInterrupted.")
     finally:
+        for mcp_client in mcp_clients:
+            mcp_client.close()
         if logger is not None:
             logger.close()

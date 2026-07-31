@@ -64,14 +64,23 @@ class Anthropic(Base):
             {
                 "name": tool.name,
                 "description": tool.description,
-                "input_schema": {
-                    "type": "object",
-                    "properties": tool.parameters,
-                    "required": list(tool.parameters),
-                },
+                "input_schema": self._input_schema_for(tool.parameters),
             }
             for tool in tools.values()
         ]
+
+    @staticmethod
+    def _input_schema_for(parameters: dict[str, Any]) -> dict[str, Any]:
+        properties: dict[str, Any] = {}
+        required: list[str] = []
+
+        for name, spec in parameters.items():
+            prop = {"type": spec.get("type"), "description": spec.get("description")}
+            properties[name] = {k: v for k, v in prop.items() if v is not None}
+            if spec.get("required", True):
+                required.append(name)
+
+        return {"type": "object", "properties": properties, "required": required}
 
     def to_payload(
         self, context: Context, *, max_output_tokens: int = 1024, tools: list[dict[str, Any]] | None = None

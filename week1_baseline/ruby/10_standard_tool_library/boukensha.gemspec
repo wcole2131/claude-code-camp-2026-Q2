@@ -19,8 +19,8 @@ Gem::Specification.new do |spec|
   spec.bindir      = "bin"
   spec.executables = ["boukensha"]
 
-  # MUD session management and CircleMUD command primitives.
-  spec.add_dependency "mud_manager", "~> 0.1"
-
+  # No domain tool implementations ship with the framework anymore (see
+  # docs/plans/mud_manager/mcp_mud_plan.md) -- mud_manager is now a
+  # dependency of mud_manager_mcp specifically, not of boukensha itself.
   # net/http and json are stdlib. Users supply their own ANTHROPIC_API_KEY.
 end

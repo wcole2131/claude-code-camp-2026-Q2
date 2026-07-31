@@ -195,3 +195,15 @@ cd week1_baseline/python/<new_step> && uv run pytest -v && make lint
   duck-typed `NotImplementedError`-raising class method, not an instance-based abstract method —
   Python's `abc.ABC`/`@abstractmethod` doesn't map cleanly onto class-level, no-instance methods,
   so this project has consistently kept the duck-typed `NotImplementedError` shape instead.
+- **Watch for floating artifacts when a Ruby step has no matching Python step.** `ruby/09_global_executable`
+  (the gem/`bin/boukensha`/`~/.boukensharc` machinery) has no `python/09_*` counterpart and never
+  will — see `docs/plans/floating_artifacts/boukensharc.md` before treating a diff that spans the
+  09 gap (e.g. `python/08` → `python/10`) as step content. Check that doc's list of floating
+  artifacts before assuming everything in such a diff needs porting.
+- **Editing an already-ported file outside of this porting workflow (a bug fix, a refactor, an
+  infrastructure change) still needs both sides updated in the same change.** This skill's steps
+  above cover porting a *new* step; they don't fire when you're just patching an existing one. Any
+  file with a `# Mirrored by ...` / `# Mirrors ...` comment pointing at its counterpart (e.g.
+  `lib/boukensha/mcp.rb` ↔ `boukensha/mcp.py`) has to move in lockstep — grep for `Mirror` across
+  both `lib/` and `boukensha/` if you're not sure whether a file you're touching has one, don't
+  assume you'll remember, and don't wait for a future full re-port to catch the drift.

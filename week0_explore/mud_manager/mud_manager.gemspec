@@ -11,7 +11,9 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 3.0"
 
-  spec.files = Dir["lib/**/*.rb"]
+  spec.files       = Dir["lib/**/*.rb"] + Dir["bin/*"]
+  spec.bindir      = "bin"
+  spec.executables = ["mud-manager"]
 
-  # No external dependencies — socket and thread are stdlib.
+  # No external dependencies — socket, thread, and optparse are stdlib.
 end

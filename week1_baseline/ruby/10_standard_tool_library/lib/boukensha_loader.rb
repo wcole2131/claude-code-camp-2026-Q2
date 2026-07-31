@@ -77,17 +77,20 @@ module BoukenshaLoader
     repl_opts = {}
 
     if ENV["MUD_NAME"]
-      # Legacy env-var override still works and takes precedence over config.
-      repl_opts[:working_dir] = false
-      repl_opts[:mud] = {
-        host:     ENV.fetch("MUD_HOST",     "localhost"),
-        port:     ENV.fetch("MUD_PORT",     "4000").to_i,
-        name:     ENV.fetch("MUD_NAME"),
-        password: ENV.fetch("MUD_PASSWORD") { abort "boukensha: MUD_NAME is set but MUD_PASSWORD is missing." }
-      }
+      # Legacy env-var override still works and takes precedence over config:
+      # connect to mud_manager_mcp only, skipping the default
+      # file_system_mcp/shell_mcp servers entirely.
+      repl_opts[:mcp_servers] = [
+        Boukensha::MCP.mud_manager_server(
+          host:     ENV.fetch("MUD_HOST", "localhost"),
+          port:     ENV.fetch("MUD_PORT", "4000").to_i,
+          name:     ENV.fetch("MUD_NAME"),
+          password: ENV.fetch("MUD_PASSWORD") { abort "boukensha: MUD_NAME is set but MUD_PASSWORD is missing." }
+        )
+      ]
     end
-    # If MUD_NAME is not set, Boukensha.repl will fall back to config.mud_* values
-    # automatically (via mud_opts_from_config inside Boukensha.repl).
+    # If MUD_NAME is not set, Boukensha.repl builds its default mcp_servers:
+    # list from config.mud_* values automatically (see Boukensha.default_mcp_servers).
 
     Boukensha.repl(**repl_opts)
   end

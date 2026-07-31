@@ -1,5 +1,10 @@
 PATH
-  remote: .
+  remote: ../../week0_explore/mud_manager
+  specs:
+    mud_manager (0.1.0)
+
+PATH
+  remote: ../ruby/10_standard_tool_library
   specs:
     boukensha (0.10.0)
 
@@ -9,12 +14,12 @@ GEM
     dotenv (3.2.0)
 
 PLATFORMS
-  arm64-darwin-23
-  ruby
+  x86_64-linux
 
 DEPENDENCIES
   boukensha!
   dotenv
+  mud_manager!
 
 BUNDLED WITH
    2.5.19

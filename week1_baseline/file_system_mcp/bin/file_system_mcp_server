@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# A real MCP (Model Context Protocol) server over stdio exposing filesystem
+# tools, sandboxed to a working directory. See
+# docs/plans/mud_manager/mcp_mud_plan.md -- this server exists so no
+# language's agent needs its own filesystem tool implementation; every
+# language reaches it the same generic way (Boukensha::MCP / MCPClient),
+# the same pattern mud_manager_mcp already established for MUD.
+#
+# The JSON-RPC loop itself is generic -- see Boukensha::MCP::Server
+# (a Bundler path dependency on ../ruby/10_standard_tool_library, for the
+# generic primitives only) -- this script supplies only the domain-specific
+# piece: which filesystem tools exist.
+#
+# Config comes from the environment:
+#   WORKING_DIR (required) -- all file paths are resolved relative to this root
+
+require "boukensha"
+require_relative "../lib/file_system_tools"
+
+ctx      = Boukensha::Context.new(task: nil)
+registry = Boukensha::Registry.new(ctx)
+
+FileSystemTools.register(
+  registry,
+  working_dir: ENV.fetch("WORKING_DIR") { abort "file_system_mcp_server: WORKING_DIR is required" }
+)
+
+warn "[file_system_mcp_server] ready — #{ctx.tool_count} tools registered"
+
+Boukensha::MCP::Server.new(registry, name: "file_system_mcp", version: "0.1.0").serve
