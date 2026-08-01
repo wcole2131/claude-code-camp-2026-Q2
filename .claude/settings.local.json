@@ -221,7 +221,12 @@
       "Bash(sudo -l)",
       "Bash(/usr/bin/gem3.0 -v)",
       "Bash(env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/tmp/fakehome ruby3.0 -e \"require 'rubygems'; require 'rubygems/remote_fetcher'; puts Gem::RemoteFetcher.fetcher.inspect\")",
-      "Bash(curl -s --max-time 5 \"https://rubygems.org/api/v1/gems/charm.json\")"
+      "Bash(curl -s --max-time 5 \"https://rubygems.org/api/v1/gems/charm.json\")",
+      "Bash(timeout 30 bin/ruby/12_context)",
+      "Bash(bin/setup_ruby_step 12_context)",
+      "Bash(sed -i 's/^   2.5.19/   2.3.5/' Gemfile.lock)",
+      "Bash(BUNDLE_GEMFILE=\"$\\(pwd\\)/Gemfile\" bundle install)",
+      "Bash(env -u BUNDLE_GEMFILE -u BUNDLE_APP_CONFIG -u BUNDLE_BIN_PATH timeout 30 bin/ruby/12_context)"
     ]
   }
 }
